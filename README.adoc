@@ -1,0 +1,7 @@
+# BI-PA1 repozitář
+
+Ahoj studente,
+
+toto je tvůj oficiální repozitář k předmětu https://courses.fit.cvut.cz/BI-PA1/[BI-PA1]. Repozitář ti byl vygenerován automaticky a je doporučené ho aktivně využívat (např. pro verzování svých domácích úkolů). Struktura repozitáře je na tobě, doporučujeme postupovat dle https://courses.fit.cvut.cz/BI-GIT/pa1.html[informací z předmětu BI-GIT], obzvláště pokud tento předmět máš v tomto semestru zapsaný.
+
+Pokud si nejsi jistý, jak pracovat se systémem Git, můžeš se podívat na materiály předmětu https://courses.fit.cvut.cz/BI-GIT/[BI-GIT].
