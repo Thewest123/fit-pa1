@@ -119,7 +119,7 @@ int main(void)
     //hour = hour2 - hour1 + carry;
 
     // Output the result
-    printf("Doba: %2d:%02d:%02d,%03d", hour, min, sec, ms);
+    printf("Doba: %2d:%02d:%02d,%03d\n", hour, min, sec, ms);
 
     return 0;
 }
