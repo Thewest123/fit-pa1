@@ -12,7 +12,7 @@ int main(void)
     int hour1, hour2;
     int min1, min2;
     int sec1, sec2;
-    int ms1 = 1, ms2;
+    int ms1, ms2;
 
     char msString[3];
 
@@ -36,7 +36,7 @@ int main(void)
         msString[2] = '0';
 
     //Convert ASCII digits to 3 digit decimal value
-    ms1 = ((msString[0] - '0') * 100) + ((msString[1] - '0') * 10) + (msString[2] - '0');
+    ms1 = atoi(msString);
 
     // Check limit values
     if (hour1 >= 24 || hour1 < 0)
@@ -68,7 +68,7 @@ int main(void)
         msString[2] = '0';
 
     //Convert ASCII digits to 3 digit decimal value
-    ms2 = ((msString[0] - '0') * 100) + ((msString[1] - '0') * 10) + (msString[2] - '0');
+    ms2 = atoi(msString);
 
     // Check limit values
     if (hour2 >= 24 || hour2 < 0)
