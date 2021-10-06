@@ -1,0 +1,8 @@
+# Compiled binaries
+*.out
+
+# ProgTest tester script
+.progtest-tester.sh
+
+# ProgTest tester script test_data folder
+.test_data/
