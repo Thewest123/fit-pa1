@@ -12,15 +12,31 @@ int main(void)
     int hour1, hour2;
     int min1, min2;
     int sec1, sec2;
-    int ms1, ms2;
+    int ms1 = 1, ms2;
+
+    char msString[3];
 
     // Get input for time 1
     printf("Zadejte cas t1:\n");
-    int conversions1 = scanf(" %d : %d : %d , %d", &hour1, &min1, &sec1, &ms1);
+    int conversions1 = scanf(" %d : %d : %d , %03s", &hour1, &min1, &sec1, &msString[0]);
 
     // Check input format
     if (conversions1 != 4)
         return exitWithError();
+
+    //Check what digits were entered for milliseconds
+    //If nothing is entered in some place, reset to char '0'' = ASCII 48'
+    if (msString[0] < '0')
+        msString[0] = '0';
+
+    if (msString[1] < '0')
+        msString[1] = '0';
+
+    if (msString[2] < '0')
+        msString[2] = '0';
+
+    //Convert ASCII digits to 3 digit decimal value
+    ms1 = ((msString[0] - '0') * 100) + ((msString[1] - '0') * 10) + (msString[2] - '0');
 
     // Check limit values
     if (hour1 >= 24 || hour1 < 0)
@@ -34,11 +50,25 @@ int main(void)
 
     // Get input for time 2
     printf("Zadejte cas t2:\n");
-    int conversions2 = scanf(" %d : %d : %d , %d", &hour2, &min2, &sec2, &ms2);
+    int conversions2 = scanf(" %d : %d : %d , %03s", &hour2, &min2, &sec2, &msString[0]);
 
     // Check input format
     if (conversions2 != 4)
         return exitWithError();
+
+    //Check what digits were entered for milliseconds
+    //If nothing is entered in some place, reset to char '0'' = ASCII 48'
+    if (msString[0] < '0')
+        msString[0] = '0';
+
+    if (msString[1] < '0')
+        msString[1] = '0';
+
+    if (msString[2] < '0')
+        msString[2] = '0';
+
+    //Convert ASCII digits to 3 digit decimal value
+    ms2 = ((msString[0] - '0') * 100) + ((msString[1] - '0') * 10) + (msString[2] - '0');
 
     // Check limit values
     if (hour2 >= 24 || hour2 < 0)
