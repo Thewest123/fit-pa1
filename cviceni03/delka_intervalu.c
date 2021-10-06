@@ -97,7 +97,7 @@ int main(void)
 
     int carry = 0;
 
-    // Count miliseconds difference
+    // Count milliseconds difference
     if (ms2 - (ms1 + carry) >= 0)
     {
         ms = ms2 - (ms1 + carry);
