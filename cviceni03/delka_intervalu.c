@@ -1,102 +1,72 @@
 #include <stdio.h>
 
+// Global variables
+int hour1, hour2, min1, min2, sec1, sec2, ms1, ms2;
+int hour, min, sec, ms;
+
 int exitWithError()
 {
     printf("Nespravny vstup.\n");
     return 0;
 }
 
-int hour1, hour2;
-int min1, min2;
-int sec1, sec2;
-int ms1, ms2;
-
-int hour, min, sec, ms;
-
-int main(void)
+void normalizeMillisInput(char millisString[3])
 {
+    if (millisString[0] < '0')
+        millisString[0] = '0';
 
-    char msString1[3] = {'\0', '\0', '\0'};
-    char msString2[3] = {'\0', '\0', '\0'};
-    char end1 = '\0';
-    char end2 = '\0';
+    if (millisString[1] < '0')
+        millisString[1] = '0';
 
-    // Get input for time 1
-    printf("Zadejte cas t1:\n");
-    int conversions1 = scanf(" %d : %d : %d , %03s%c", &hour1, &min1, &sec1, &msString1[0], &end1);
+    if (millisString[2] < '0')
+        millisString[2] = '0';
+}
+
+int convertAsciiToInteger(char millisString[3])
+{
+    return ((millisString[0] - '0') * 100) + ((millisString[1] - '0') * 10) + ((millisString[2] - '0') * 1);
+}
+
+int readTime(const char *timeName, int *hour, int *min, int *sec, int *ms)
+{
+    char millisString[3] = {'\0', '\0', '\0'};
+    char endChar = 0;
+
+    printf("Zadejte cas %s:\n", timeName);
+    int conversions = scanf(" %d : %d : %d , %03s%c", hour, min, sec, &millisString[0], &endChar);
 
     // Check input format
-    if (conversions1 != 4 && conversions1 != 5)
+    if (conversions != 4 && conversions != 5)
         return exitWithError();
 
-    if (msString1[0] < '0' || msString1[0] > '9')
+    if (millisString[0] < '0' || millisString[0] > '9')
         return exitWithError();
 
-    if (end1 != '\n')
+    if (endChar != '\n')
         return exitWithError();
 
     //Check what digits were entered for milliseconds
     //If nothing is entered in some place, reset to char '0'' = ASCII 48'
-    if (msString1[0] < '0')
-        msString1[0] = '0';
-
-    if (msString1[1] < '0')
-        msString1[1] = '0';
-
-    if (msString1[2] < '0')
-        msString1[2] = '0';
+    normalizeMillisInput(&millisString[0]);
 
     //Convert ASCII digits to 3 digit decimal value
-    ms1 = ((msString1[0] - '0') * 100) + ((msString1[1] - '0') * 10) + ((msString1[2] - '0') * 1);
+    *ms = convertAsciiToInteger(millisString);
 
     // Check limit values
-    if (hour1 >= 24 || hour1 < 0)
+    if (*hour >= 24 || *hour < 0)
         return exitWithError();
-    if (min1 >= 60 || min1 < 0)
+    if (*min >= 60 || *min < 0)
         return exitWithError();
-    if (sec1 >= 60 || sec1 < 0)
+    if (*sec >= 60 || *sec < 0)
         return exitWithError();
-    if (ms1 >= 1000 || ms1 < 0)
-        return exitWithError();
-
-    // Get input for time 2
-    printf("Zadejte cas t2:\n");
-    int conversions2 = scanf(" %d : %d : %d , %03s%c", &hour2, &min2, &sec2, &msString2[0], &end2);
-
-    // Check input format
-    if (conversions2 != 4 && conversions2 != 5)
+    if (*ms >= 1000 || *ms < 0)
         return exitWithError();
 
-    if (msString2[0] < '0' || msString2[0] > '9')
-        return exitWithError();
+    return 1;
+}
 
-    if (end2 != '\n')
-        return exitWithError();
-
-    //Check what digits were entered for milliseconds
-    //If nothing is entered in some place, reset to char '0'' = ASCII 48'
-    if (msString2[0] < '0')
-        msString2[0] = '0';
-
-    if (msString2[1] < '0')
-        msString2[1] = '0';
-
-    if (msString2[2] < '0')
-        msString2[2] = '0';
-
-    //Convert ASCII digits to 3 digit decimal value
-    ms2 = ((msString2[0] - '0') * 100) + ((msString2[1] - '0') * 10) + ((msString2[2] - '0') * 1);
-
-    // Check limit values
-    if (hour2 >= 24 || hour2 < 0)
-        return exitWithError();
-    if (min2 >= 60 || min2 < 0)
-        return exitWithError();
-    if (sec2 >= 60 || sec2 < 0)
-        return exitWithError();
-    if (ms2 >= 1000 || ms2 < 0)
-        return exitWithError();
-
+int checkSecondTimeIsLater()
+{
     // Check if t1 <= t2
     if (hour1 > hour2)
         return exitWithError();
@@ -107,11 +77,11 @@ int main(void)
     else if (hour1 == hour2 && min1 == min2 && sec1 == sec2 && ms1 > ms2)
         return exitWithError();
 
-    //int hour = 0;
-    //int min = 0;
-    //int sec = 0;
-    //int ms = 0;
+    return 1;
+}
 
+void countTimeDifference()
+{
     int carry = 0;
 
     // Count milliseconds difference
@@ -161,6 +131,20 @@ int main(void)
         hour = hour2 - (hour1 + carry) + 24;
         carry = 1;
     }
+}
+
+int main(void)
+{
+    if (readTime("t1", &hour1, &min1, &sec1, &ms1) != 1)
+        return 0;
+
+    if (readTime("t2", &hour2, &min2, &sec2, &ms2) != 1)
+        return 0;
+
+    if (checkSecondTimeIsLater() != 1)
+        return 0;
+
+    countTimeDifference();
 
     // Output the result
     printf("Doba: %2d:%02d:%02d,%03d\n", hour, min, sec, ms);
