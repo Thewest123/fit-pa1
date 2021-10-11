@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 
 int printError()
 {
@@ -39,7 +40,7 @@ int main(void)
         if (b == 0)
             return printError();
 
-        output = (int)(a / b);
+        output = floor((a / b));
         break;
 
     default:
@@ -48,7 +49,7 @@ int main(void)
     }
 
     // Print the output
-    printf("%g\n", output);
+    printf("%.12g\n", output);
 
     return 0;
 }
