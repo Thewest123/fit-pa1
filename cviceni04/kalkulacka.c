@@ -40,7 +40,7 @@ int main(void)
         if (b == 0)
             return printError();
 
-        output = floor((a / b));
+        output = round((a / b));
         break;
 
     default:
