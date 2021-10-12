@@ -40,7 +40,7 @@ int main(void)
         if (b == 0)
             return printError();
 
-        output = round((a / b));
+        output = (a / b < 0) ? ceil(a / b) : floor(a / b);
         break;
 
     default:
