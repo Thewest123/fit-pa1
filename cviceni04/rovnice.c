@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#define EPS (double)1e-14
+
 int printError()
 {
     printf("Nespravny vstup.\n");
@@ -48,8 +50,8 @@ int main(void)
         break;
     }
 
-    // Print the output
-    if (output == result)
+    // Print the output, comparing doubles with small variance
+    if (fabs(output - result) <= EPS * (fabs(output) + fabs(result)))
         printf("Rovnice je spravne.\n");
     else
         printf("%.12g != %.12g\n", output, result);
