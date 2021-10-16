@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define EPS (double)1e-12
+#define EPS (double)1e-6
 
 int exitWithError();
 int almostEqual(double a, double b);
@@ -21,10 +21,15 @@ int main(void)
     printf("Obrazec #1\n");
 
     char shapeType1 = 0;
-    double a1, b1, c1 = 1;
+    double a1 = 1;
+    double b1 = 1;
+    double c1 = 1;
 
     // Read for shape type
     if (scanf(" %c", &shapeType1) != 1)
+        return exitWithError();
+
+    if (shapeType1 != 'S' && shapeType1 != 'R' && shapeType1 != 'T')
         return exitWithError();
 
     // Read and check for square
@@ -47,10 +52,15 @@ int main(void)
     printf("Obrazec #2\n");
 
     char shapeType2 = 0;
-    double a2, b2, c2 = 1;
+    double a2 = 1;
+    double b2 = 1;
+    double c2 = 1;
 
     // Read for shape type
     if (scanf(" %c", &shapeType2) != 1)
+        return exitWithError();
+
+    if (shapeType2 != 'S' && shapeType2 != 'R' && shapeType2 != 'T')
         return exitWithError();
 
     // Read and check for square
