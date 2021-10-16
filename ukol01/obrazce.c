@@ -1,19 +1,19 @@
 #include <stdio.h>
 #include <math.h>
 
-#define EPS (double)1e-6
+#define EPS (double)1e-12
 
 int exitWithError();
 int almostEqual(double a, double b);
 int isValidTriangle(double a, double b, double c);
 
-int squarePerimeter(double a);
-int rectanglePerimeter(double a, double b);
-int trianglePerimeter(double a, double b, double c);
+double squarePerimeter(double a);
+double rectanglePerimeter(double a, double b);
+double trianglePerimeter(double a, double b, double c);
 
-int squareArea(double a);
-int rectangleArea(double a, double b);
-int triangleArea(double a, double b, double c);
+double squareArea(double a);
+double rectangleArea(double a, double b);
+double triangleArea(double a, double b, double c);
 
 int main(void)
 {
@@ -134,12 +134,12 @@ int main(void)
         break;
     }
 
-    if (perimeter1 > perimeter2)
+    if (almostEqual(perimeter1, perimeter2))
+        printf(" = ");
+    else if (perimeter1 > perimeter2)
         printf(" > ");
     else if (perimeter1 < perimeter2)
         printf(" < ");
-    else if (almostEqual(perimeter1, perimeter2))
-        printf(" = ");
 
     switch (shapeType2)
     {
@@ -169,12 +169,12 @@ int main(void)
         break;
     }
 
-    if (area1 > area2)
+    if (almostEqual(area1, area2))
+        printf(" = ");
+    else if (area1 > area2)
         printf(" > ");
     else if (area1 < area2)
         printf(" < ");
-    else if (almostEqual(area1, area2))
-        printf(" = ");
 
     switch (shapeType2)
     {
@@ -223,32 +223,33 @@ int isValidTriangle(double a, double b, double c)
 }
 
 // Calculate shape values
-int squarePerimeter(double a)
+double squarePerimeter(double a)
 {
     return 4 * a;
 }
 
-int rectanglePerimeter(double a, double b)
+double rectanglePerimeter(double a, double b)
 {
     return (2 * a) + (2 * b);
 }
-int trianglePerimeter(double a, double b, double c)
+double trianglePerimeter(double a, double b, double c)
 {
     return a + b + c;
 }
 
-int squareArea(double a)
+double squareArea(double a)
 {
     return a * a;
 }
 
-int rectangleArea(double a, double b)
+double rectangleArea(double a, double b)
 {
     return a * b;
 }
 
-int triangleArea(double a, double b, double c)
+double triangleArea(double a, double b, double c)
 {
     double s = trianglePerimeter(a, b, c) / 2;
     return sqrt(s * (s - a) * (s - b) * (s - c));
+    //return 1;
 }
