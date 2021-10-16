@@ -15,6 +15,9 @@ double squareArea(double a);
 double rectangleArea(double a, double b);
 double triangleArea(double a, double b, double c);
 
+void printEquality(double a, double b);
+void printShape(char shapeType, int shapeNumber);
+
 int main(void)
 {
     // Read input for the FIRST shape
@@ -36,7 +39,7 @@ int main(void)
     if (shapeType1 == 'S' && scanf(" %lf", &a1) != 1)
         return exitWithError();
 
-    // Rad and check for rectangle
+    // Read and check for rectangle
     if (shapeType1 == 'R' && (scanf(" %lf %lf", &a1, &b1) != 2 || almostEqual(a1, b1)))
         return exitWithError();
 
@@ -67,7 +70,7 @@ int main(void)
     if (shapeType2 == 'S' && scanf(" %lf", &a2) != 1)
         return exitWithError();
 
-    // Rad and check for rectangle
+    // Read and check for rectangle
     if (shapeType2 == 'R' && (scanf(" %lf %lf", &a2, &b2) != 2 || almostEqual(a2, b2)))
         return exitWithError();
 
@@ -120,74 +123,14 @@ int main(void)
 
     // Print the output
     printf("Obvod: ");
-
-    switch (shapeType1)
-    {
-    case 'S':
-        printf("ctverec #1");
-        break;
-    case 'R':
-        printf("obdelnik #1");
-        break;
-    case 'T':
-        printf("trojuhelnik #1");
-        break;
-    }
-
-    if (almostEqual(perimeter1, perimeter2))
-        printf(" = ");
-    else if (perimeter1 > perimeter2)
-        printf(" > ");
-    else if (perimeter1 < perimeter2)
-        printf(" < ");
-
-    switch (shapeType2)
-    {
-    case 'S':
-        printf("ctverec #2");
-        break;
-    case 'R':
-        printf("obdelnik #2");
-        break;
-    case 'T':
-        printf("trojuhelnik #2");
-        break;
-    }
+    printShape(shapeType1, 1);
+    printEquality(perimeter1, perimeter2);
+    printShape(shapeType2, 2);
 
     printf("\nObsah: ");
-
-    switch (shapeType1)
-    {
-    case 'S':
-        printf("ctverec #1");
-        break;
-    case 'R':
-        printf("obdelnik #1");
-        break;
-    case 'T':
-        printf("trojuhelnik #1");
-        break;
-    }
-
-    if (almostEqual(area1, area2))
-        printf(" = ");
-    else if (area1 > area2)
-        printf(" > ");
-    else if (area1 < area2)
-        printf(" < ");
-
-    switch (shapeType2)
-    {
-    case 'S':
-        printf("ctverec #2");
-        break;
-    case 'R':
-        printf("obdelnik #2");
-        break;
-    case 'T':
-        printf("trojuhelnik #2");
-        break;
-    }
+    printShape(shapeType1, 1);
+    printEquality(area1, area2);
+    printShape(shapeType2, 2);
 
     printf("\n");
 
@@ -232,6 +175,7 @@ double rectanglePerimeter(double a, double b)
 {
     return (2 * a) + (2 * b);
 }
+
 double trianglePerimeter(double a, double b, double c)
 {
     return a + b + c;
@@ -251,5 +195,31 @@ double triangleArea(double a, double b, double c)
 {
     double s = trianglePerimeter(a, b, c) / 2;
     return sqrt(s * (s - a) * (s - b) * (s - c));
-    //return 1;
+}
+
+// Output printing methods
+void printEquality(double a, double b)
+{
+    if (almostEqual(a, b))
+        printf(" = ");
+    else if (a > b)
+        printf(" > ");
+    else if (a < b)
+        printf(" < ");
+}
+
+void printShape(char shapeType, int shapeNumber)
+{
+    switch (shapeType)
+    {
+    case 'S':
+        printf("ctverec #%d", shapeNumber);
+        break;
+    case 'R':
+        printf("obdelnik #%d", shapeNumber);
+        break;
+    case 'T':
+        printf("trojuhelnik #%d", shapeNumber);
+        break;
+    }
 }
