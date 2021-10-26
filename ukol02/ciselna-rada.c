@@ -110,8 +110,23 @@ int main(int argc, char const *argv[])
     long long base = 0;
 
     // Read input
-    while (scanf("%lld %lld", &position, &base) == 2)
+    for (;;)
     {
+        int convPos = scanf("%lld ", &position);
+        int convBase = scanf("%lld", &base);
+
+        // If only 1 number is entered and EOF, error
+        if (convPos == 1 && feof(stdin))
+            return exitWithError();
+
+        // If no number is entered and EOF, end the program without error
+        if (feof(stdin))
+            return 0;
+
+        // If either conversion didnt work
+        if (convPos != 1 || convBase != 1)
+            return exitWithError();
+
         // Check if position is valid number
         if (position < 0)
             return exitWithError();
@@ -127,10 +142,6 @@ int main(int argc, char const *argv[])
 
         printResult(finalNumber, arrowPosition, base);
     }
-
-    // Check invalid input (scanf is not EOF)
-    if (!feof(stdin))
-        return exitWithError();
 
     return 0;
 }
