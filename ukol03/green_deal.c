@@ -13,18 +13,31 @@
  * @brief Returns 1 if the year is a leap year, otherwise returns 0
  * 
  * @param year 
- * @return int 
+ * @return int Value 1 if leap year, 0 if regular year
  */
 int isLeapYear(int year)
 {
     return (year % 4 == 0 && ((year % 100 != 0 || year % 400 == 0) && year % 4000 != 0));
 }
 
+/**
+ * @brief Get count of days in a year, respecting leap years
+ * 
+ * @param year 
+ * @return int Count of days
+ */
 int getDaysInYear(int year)
 {
     return isLeapYear(year) ? 366 : 365;
 }
 
+/**
+ * @brief Get count of days in a month, respecting leap February
+ * 
+ * @param year 
+ * @param month 
+ * @return int Count of days
+ */
 int getDaysInMonth(int year, int month)
 {
     if (month == 2 && isLeapYear(year))
@@ -43,15 +56,19 @@ int getDaysInMonth(int year, int month)
                     30,
                     31};
 
-    if ((month - 1) < 0 || (month - 1 > 11))
-    {
-        printf("Chyba indexu v getDaysInMonth()\n");
-        return 0;
-    }
-
     return months[month - 1];
 }
 
+/**
+ * @brief Convert month, day, hour, minute to single number (minutes)
+ * 
+ * @param year Year is not added to the sum, only needed for leap February
+ * @param month 
+ * @param day 
+ * @param hour 
+ * @param minute 
+ * @return int Sum of minutes from the beggining of a year
+ */
 int convertToMinutes(int year, int month, int day, int hour, int minute)
 {
     int result = 0;
@@ -68,6 +85,14 @@ int convertToMinutes(int year, int month, int day, int hour, int minute)
     return result;
 }
 
+/**
+ * @brief Convert day, hour, minute to single number (days)
+ * 
+ * @param year Year is not added to the sum, only needed for leap February
+ * @param month 
+ * @param day 
+ * @return int Sum of days from the beggining of a year
+ */
 int countDaysFromBeggining(int year, int month, int day)
 {
     int result = 0;
@@ -82,8 +107,18 @@ int countDaysFromBeggining(int year, int month, int day)
     return result;
 }
 
+/**
+ * @brief Get number of changed segments between two 7-segment digits
+ * 
+ * 1 change = 1 Joul --> changes == consumption
+ * 
+ * @param digit1 
+ * @param digit2 
+ * @return int 
+ */
 int getConsumptionForChange(int digit1, int digit2)
 {
+    // Representation of turned segments in a 7-segment digit (ordered as GFEDCBA)
     unsigned int digits[] = {
         0b0111111,
         0b0000110,
@@ -96,24 +131,25 @@ int getConsumptionForChange(int digit1, int digit2)
         0b1111111,
         0b1101111};
 
-    if (digit1 < 0 || digit1 > 9)
-    {
-        printf("Chyba indexu v getConsumptionForChange() pro digit1\n");
-        return 0;
-    }
-
-    if (digit2 < 0 || digit2 > 9)
-    {
-        printf("Chyba indexu v getConsumptionForChange() pro digit2\n");
-        return 0;
-    }
-
+    // XOR the digits to get only the changed bits
+    // popcount to count the set(changed) bits
     int changesCount = __builtin_popcount(digits[digit1] ^ digits[digit2]);
 
     return changesCount;
 }
 
-long long getConsumptionBetweenDates(int y1, int m1, int d1, int y2, int m2, int d2)
+/**
+ * @brief Count the consumption between two provided dates (without time)
+ * 
+ * @param y1 Year for Time1
+ * @param m1 Month for Time1
+ * @param d1 Day for Time1
+ * @param y2 Year for Time2
+ * @param m2 Month for Time2
+ * @param d2 Day for Time2
+ * @return long long 
+ */
+long long countConsumptionBetweenDates(int y1, int m1, int d1, int y2, int m2, int d2)
 {
     long long daysDiff = 0;
 
@@ -153,6 +189,15 @@ long long getConsumptionBetweenDates(int y1, int m1, int d1, int y2, int m2, int
     return daysDiff * ONE_DAY_CONSUMPTION;
 }
 
+/**
+ * @brief Count consumption between two provided times
+ * 
+ * @param startHour 
+ * @param startMin 
+ * @param endHour 
+ * @param endMin 
+ * @return long long 
+ */
 long long countConsumptionBetweenTimes(int startHour, int startMin, int endHour, int endMin)
 {
     long long consumption = 0;
@@ -184,6 +229,21 @@ long long countConsumptionBetweenTimes(int startHour, int startMin, int endHour,
     return consumption;
 }
 
+/**
+ * @brief Chech the input for invalid numbers and that the 2nd timestamp is after the 1st
+ * 
+ * @param y1 Year for Time1
+ * @param m1 Month for Time1
+ * @param d1 Day for Time1
+ * @param h1 Hours for Time1
+ * @param i1 Minutes for Time1
+ * @param y2 Year for Time2
+ * @param m2 Month for Time2
+ * @param d2 Day for Time2
+ * @param h2 Hours for Time2
+ * @param i2 Minutes for Time2
+ * @return int Value 1 if the input is valid, 0 if invalid
+ */
 int checkInput(int y1, int m1, int d1, int h1, int i1,
                int y2, int m2, int d2, int h2, int i2)
 {
@@ -217,7 +277,7 @@ int energyConsumption(int y1, int m1, int d1, int h1, int i1,
         return 0;
 
     // Get consumption between dates (no need to check individual digit/segment changes)
-    *consumption = getConsumptionBetweenDates(y1, m1, d1, y2, m2, d2);
+    *consumption = countConsumptionBetweenDates(y1, m1, d1, y2, m2, d2);
 
     // Count clock consumption for remaining hours and minutes
     if ((h1 * 60) + i1 < (h2 * 60) + i2)
@@ -246,7 +306,7 @@ int energyConsumption(int y1, int m1, int d1, int h1, int i1,
         *consumption += countConsumptionBetweenTimes(0, 0, h2, i2);
     }
 
-    printf("Constumption: %lld\n", *consumption);
+    printf("Consumption: %lld\n", *consumption);
     return 1;
 }
 
@@ -286,6 +346,8 @@ int main(int argc, char *argv[])
            consumption == 0);
 
     // Dalsi moje
+    assert(energyConsumption(1634, 1, 1, 1, 2, 1774, 11, 21, 2, 60, &consumption) == 0);
+
     assert(energyConsumption(1234, 1, 1, 1, 2, 1774, 11, 21, 2, 1, &consumption) == 0);
     assert(energyConsumption(1610, 1, 1, 1, 2, 1774, 21, 21, 2, 1, &consumption) == 0);
     assert(energyConsumption(1610, 1, 1, 1, 2, 1774, 0, 21, 2, 1, &consumption) == 0);
