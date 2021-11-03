@@ -2,9 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <limits.h>
 #endif /* __PROGTEST__ */
 
 #define ONE_DAY_CONSUMPTION 292886
+#define ONE_MINUTE_CONSUMPTION 200
+#define DAYS_IN_4000_YEARS 1460969 //Has 969 leap years in 4000 years --> (969 * 366 + 3031 * 365)
 
 /**
  * @brief Returns 1 if the year is a leap year, otherwise returns 0
@@ -19,14 +22,14 @@ int isLeapYear(int year)
 
 int getDaysInYear(int year)
 {
-    if (isLeapYear(year))
-        return 366;
-    else
-        return 365;
+    return isLeapYear(year) ? 366 : 365;
 }
 
 int getDaysInMonth(int year, int month)
 {
+    if (month == 2 && isLeapYear(year))
+        return 29;
+
     int months[] = {31,
                     28,
                     31,
@@ -39,9 +42,6 @@ int getDaysInMonth(int year, int month)
                     31,
                     30,
                     31};
-
-    if (month == 2 && isLeapYear(year))
-        return 29;
 
     return months[month - 1];
 }
@@ -90,16 +90,84 @@ int getConsumptionForChange(int digit1, int digit2)
         0b1111111,
         0b1101111};
 
-    unsigned int changedBits = digits[digit1] ^ digits[digit2];
-    int changesCount = __builtin_popcount(changedBits);
+    int changesCount = __builtin_popcount(digits[digit1] ^ digits[digit2]);
 
     return changesCount;
 }
 
-int energyConsumption(int y1, int m1, int d1, int h1, int i1,
-                      int y2, int m2, int d2, int h2, int i2, long long int *consumption)
+long long getConsumptionBetweenDates(int y1, int m1, int d1, int y2, int m2, int d2)
 {
-    // Check input for valid numbers
+    long long daysDiff = 0;
+
+    if (y1 != y2)
+    {
+        daysDiff = getDaysInYear(y1) - countDaysFromBeggining(y1, m1, d1);
+
+        if (y2 - y1 > 4000)
+        {
+            // Skip chunks of 4000 years, every 4000 years have 969 leap years (969 * 366 + 3031 * 365)
+            long long count = (y2 - y1) / 4000;
+
+            daysDiff += count * DAYS_IN_4000_YEARS;
+
+            // Count for the unskippable reminder
+            for (int i = y1 + 1 + (count * 4000); i < y2; i++)
+            {
+                daysDiff += getDaysInYear(i);
+            }
+        }
+        else
+        {
+            for (int i = y1 + 1; i < y2; i++)
+            {
+                daysDiff += getDaysInYear(i);
+            }
+        }
+
+        daysDiff += countDaysFromBeggining(y2, m2, d2);
+    }
+    else
+    {
+        daysDiff = countDaysFromBeggining(y2, m2, d2) - countDaysFromBeggining(y1, m1, d1);
+    }
+
+    return daysDiff * ONE_DAY_CONSUMPTION;
+}
+
+long long countConsumptionBetweenTimes(int startHour, int startMin, int endHour, int endMin)
+{
+    long long consumption = 0;
+
+    int currentHour = startHour;
+    int currentMin = startMin;
+
+    while (currentHour < endHour || currentMin < endMin)
+    {
+        if (currentMin == 59)
+        {
+            int previousHour = currentHour++;
+            consumption += getConsumptionForChange(previousHour / 10, currentHour / 10);
+            consumption += getConsumptionForChange(previousHour % 10, currentHour % 10);
+            consumption += getConsumptionForChange(currentMin / 10, 0);
+            consumption += getConsumptionForChange(currentMin % 10, 0);
+            consumption += ONE_MINUTE_CONSUMPTION;
+            currentMin = 0;
+            continue;
+        }
+
+        int previousMin = currentMin++;
+
+        consumption += getConsumptionForChange(previousMin / 10, currentMin / 10);
+        consumption += getConsumptionForChange(previousMin % 10, currentMin % 10);
+        consumption += ONE_MINUTE_CONSUMPTION;
+    }
+
+    return consumption;
+}
+
+int checkInput(int y1, int m1, int d1, int h1, int i1,
+               int y2, int m2, int d2, int h2, int i2)
+{
     if (y1 < 1600 || y2 < 1600)
         return 0;
     if (m1 < 1 || m1 > 12 || m2 < 1 || m2 > 12)
@@ -111,171 +179,55 @@ int energyConsumption(int y1, int m1, int d1, int h1, int i1,
     if (i1 < 0 || i1 > 60 || i2 < 0 || i2 > 60)
         return 0;
 
+    // Check that second timestamp is after the first
     if (y1 > y2)
         return 0;
 
-    int minutes1 = convertToMinutes(y1, m1, d1, h1, i1);
-    int minutes2 = convertToMinutes(y2, m2, d2, h2, i2);
-
-    // Check that 2nd timestamp is after the 1st timestamp
-    if (minutes1 > minutes2 && y1 == y2)
+    // If the year is same, count minutes from beggining and compare those instead
+    if (y1 == y2 &&
+        convertToMinutes(y1, m1, d1, h1, i1) > convertToMinutes(y2, m2, d2, h2, i2))
         return 0;
 
-    // TODO: Extract to separate function
-    // Count days between dates
-    int days1 = countDaysFromBeggining(y1, m1, d1);
-    int days2 = countDaysFromBeggining(y2, m2, d2);
-    int daysDiff = 0;
+    return 1;
+}
 
-    if (y1 != y2)
+int energyConsumption(int y1, int m1, int d1, int h1, int i1,
+                      int y2, int m2, int d2, int h2, int i2, long long int *consumption)
+{
+    if (!checkInput(y1, m1, d1, h1, i1, y2, m2, d2, h2, i2))
+        return 0;
+
+    // Get consumption between dates (no need to check individual digit/segment changes)
+    *consumption = getConsumptionBetweenDates(y1, m1, d1, y2, m2, d2);
+
+    // Count clock consumption for remaining hours and minutes
+    if ((h1 * 60) + i1 < (h2 * 60) + i2)
     {
-        int daysToEnd = getDaysInYear(y1) - days1;
-        daysDiff = daysToEnd;
-
-        for (int i = y1 + 1; i < y2; i++)
-        {
-            daysDiff += getDaysInYear(i);
-        }
-
-        daysDiff += days2;
+        // If second time is after the first, simply count between them
+        *consumption += countConsumptionBetweenTimes(h1, i1, h2, i2);
     }
     else
     {
-        daysDiff = days2 - days1;
-    }
+        // Else if the second time is earlier then first (overlaps to next day)
 
-    *consumption = daysDiff * ONE_DAY_CONSUMPTION;
-
-    // TODO: Extract to separate function
-    // !! REWRITE THIS FU*KIN UGLY MESS
-    // Count clock consumption
-    int seconds1 = (h1 * 60 * 60) + (i1 * 60);
-    int seconds2 = (h2 * 60 * 60) + (i2 * 60);
-
-    if (seconds1 < seconds2)
-    {
-        int hour = h1;
-        int min = i1;
-        int sec = 0;
-
-        while (hour < h2 || min < i2 || sec != 0)
-        {
-            if (min == 59 && sec == 59)
-            {
-                int oldHour = hour++;
-                *consumption += getConsumptionForChange(oldHour / 10, hour / 10);
-                *consumption += getConsumptionForChange(oldHour % 10, hour % 10);
-                *consumption += getConsumptionForChange(min / 10, 0);
-                *consumption += getConsumptionForChange(min % 10, 0);
-                *consumption += getConsumptionForChange(sec / 10, 0);
-                *consumption += getConsumptionForChange(sec % 10, 0);
-                min = 0;
-                sec = 0;
-                continue;
-            }
-
-            if (sec == 59)
-            {
-                int oldMin = min++;
-                *consumption += getConsumptionForChange(oldMin / 10, min / 10);
-                *consumption += getConsumptionForChange(oldMin % 10, min % 10);
-                *consumption += getConsumptionForChange(sec / 10, 0);
-                *consumption += getConsumptionForChange(sec % 10, 0);
-                sec = 0;
-                continue;
-            }
-
-            int oldSec = sec++;
-
-            *consumption += getConsumptionForChange(oldSec / 10, sec / 10);
-            *consumption += getConsumptionForChange(oldSec % 10, sec % 10);
-        }
-    }
-    else
-    {
+        // Subrract 1 full day, we're going to add only portion of it
         *consumption -= ONE_DAY_CONSUMPTION;
-        int hour = h1;
-        int min = i1;
-        int sec = 0;
 
-        while (hour < 23 || min < 59 || sec != 59)
-        {
-            if (min == 59 && sec == 59)
-            {
-                int oldHour = hour++;
-                *consumption += getConsumptionForChange(oldHour / 10, hour / 10);
-                *consumption += getConsumptionForChange(oldHour % 10, hour % 10);
-                *consumption += getConsumptionForChange(min / 10, 0);
-                *consumption += getConsumptionForChange(min % 10, 0);
-                *consumption += getConsumptionForChange(sec / 10, 0);
-                *consumption += getConsumptionForChange(sec % 10, 0);
-                min = 0;
-                sec = 0;
-                continue;
-            }
+        // Count from h1:i1 to 23:59
+        *consumption += countConsumptionBetweenTimes(h1, i1, 23, 59);
 
-            if (sec == 59)
-            {
-                int oldMin = min++;
-                *consumption += getConsumptionForChange(oldMin / 10, min / 10);
-                *consumption += getConsumptionForChange(oldMin % 10, min % 10);
-                *consumption += getConsumptionForChange(sec / 10, 0);
-                *consumption += getConsumptionForChange(sec % 10, 0);
-                sec = 0;
-                continue;
-            }
-
-            int oldSec = sec++;
-
-            *consumption += getConsumptionForChange(oldSec / 10, sec / 10);
-            *consumption += getConsumptionForChange(oldSec % 10, sec % 10);
-        }
-
+        // Count from 23:59 to 00:00
         *consumption += getConsumptionForChange(23 / 10, 0);
         *consumption += getConsumptionForChange(23 % 10, 0);
         *consumption += getConsumptionForChange(59 / 10, 0);
         *consumption += getConsumptionForChange(59 % 10, 0);
-        *consumption += getConsumptionForChange(59 / 10, 0);
-        *consumption += getConsumptionForChange(59 % 10, 0);
+        *consumption += ONE_MINUTE_CONSUMPTION; //Also include the seconds digits
 
-        hour = 0;
-        min = 0;
-        sec = 0;
-
-        while (hour < h2 || min < i2 || sec != 0)
-        {
-            if (min == 59 && sec == 59)
-            {
-                int oldHour = hour++;
-                *consumption += getConsumptionForChange(oldHour / 10, hour / 10);
-                *consumption += getConsumptionForChange(oldHour % 10, hour % 10);
-                *consumption += getConsumptionForChange(min / 10, 0);
-                *consumption += getConsumptionForChange(min % 10, 0);
-                *consumption += getConsumptionForChange(sec / 10, 0);
-                *consumption += getConsumptionForChange(sec % 10, 0);
-                min = 0;
-                sec = 0;
-                continue;
-            }
-
-            if (sec == 59)
-            {
-                int oldMin = min++;
-                *consumption += getConsumptionForChange(oldMin / 10, min / 10);
-                *consumption += getConsumptionForChange(oldMin % 10, min % 10);
-                *consumption += getConsumptionForChange(sec / 10, 0);
-                *consumption += getConsumptionForChange(sec % 10, 0);
-                sec = 0;
-                continue;
-            }
-
-            int oldSec = sec++;
-
-            *consumption += getConsumptionForChange(oldSec / 10, sec / 10);
-            *consumption += getConsumptionForChange(oldSec % 10, sec % 10);
-        }
+        // Count from 00:00 to h2:i2
+        *consumption += countConsumptionBetweenTimes(0, 0, h2, i2);
     }
 
+    printf("Constumption: %lld\n", *consumption);
     return 1;
 }
 
@@ -284,10 +236,37 @@ int main(int argc, char *argv[])
 {
     long long int consumption;
 
-    /*assert(energyConsumption(2007, 3, 2, 13, 15,
-                             2012, 2, 7, 18, 45, &consumption) == 1 &&
-           consumption == 67116LL);*/
+    //Moje
+    assert(energyConsumption(1600, 1, 1, 0, 0,
+                             1600, 1, 1, 0, 0, &consumption) == 1 &&
+           consumption == 0LL);
 
+    assert(energyConsumption(1600, 1, 1, 0, 0,
+                             1600, 1, 2, 0, 0, &consumption) == 1 &&
+           consumption == 292886LL);
+
+    assert(energyConsumption(1904, 1, 1, 0, 0,
+                             2400, 12, 31, 23, 59, &consumption) == 1 &&
+           consumption == 53166716711LL);
+
+    assert(energyConsumption(1600, 1, 1, 0, 0,
+                             INT_MAX, 1, 1, 0, 0, &consumption) == 1 &&
+           consumption == 229725478147912252LL);
+
+    assert(energyConsumption(1600, 1, 1, 0, 0,
+                             INT_MAX, 12, 31, 23, 59, &consumption) == 1 &&
+           consumption == 229725478147912252LL + 106903179LL);
+
+    consumption = 123;
+    assert(energyConsumption(INT_MAX, 1, 1, 0, 0,
+                             1600, 1, 1, 0, 0, &consumption) == 0 &&
+           consumption == 123);
+
+    assert(energyConsumption(INT_MAX, 12, 31, 23, 59,
+                             INT_MAX, 12, 31, 23, 59, &consumption) == 1 &&
+           consumption == 0);
+
+    // ProgTest
     assert(energyConsumption(2021, 10, 1, 13, 15,
                              2021, 10, 1, 18, 45, &consumption) == 1 &&
            consumption == 67116LL);
