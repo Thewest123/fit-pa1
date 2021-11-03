@@ -43,6 +43,12 @@ int getDaysInMonth(int year, int month)
                     30,
                     31};
 
+    if ((month - 1) < 0 || (month - 1 > 11))
+    {
+        printf("Chyba indexu v getDaysInMonth()\n");
+        return 0;
+    }
+
     return months[month - 1];
 }
 
@@ -90,6 +96,18 @@ int getConsumptionForChange(int digit1, int digit2)
         0b1111111,
         0b1101111};
 
+    if (digit1 < 0 || digit1 > 9)
+    {
+        printf("Chyba indexu v getConsumptionForChange() pro digit1\n");
+        return 0;
+    }
+
+    if (digit2 < 0 || digit2 > 9)
+    {
+        printf("Chyba indexu v getConsumptionForChange() pro digit2\n");
+        return 0;
+    }
+
     int changesCount = __builtin_popcount(digits[digit1] ^ digits[digit2]);
 
     return changesCount;
@@ -101,6 +119,7 @@ long long getConsumptionBetweenDates(int y1, int m1, int d1, int y2, int m2, int
 
     if (y1 != y2)
     {
+        // Remaining days to the end of the year
         daysDiff = getDaysInYear(y1) - countDaysFromBeggining(y1, m1, d1);
 
         if (y2 - y1 > 4000)
@@ -176,14 +195,14 @@ int checkInput(int y1, int m1, int d1, int h1, int i1,
         return 0;
     if (h1 < 0 || h1 > 23 || h2 < 0 || h2 > 23)
         return 0;
-    if (i1 < 0 || i1 > 60 || i2 < 0 || i2 > 60)
+    if (i1 < 0 || i1 > 59 || i2 < 0 || i2 > 59)
         return 0;
 
     // Check that second timestamp is after the first
     if (y1 > y2)
         return 0;
 
-    // If the year is same, count minutes from beggining and compare those instead
+    // If years are the same, count minutes from beggining and compare those instead
     if (y1 == y2 &&
         convertToMinutes(y1, m1, d1, h1, i1) > convertToMinutes(y2, m2, d2, h2, i2))
         return 0;
@@ -265,6 +284,37 @@ int main(int argc, char *argv[])
     assert(energyConsumption(INT_MAX, 12, 31, 23, 59,
                              INT_MAX, 12, 31, 23, 59, &consumption) == 1 &&
            consumption == 0);
+
+    // Dalsi moje
+    assert(energyConsumption(1234, 1, 1, 1, 2, 1774, 11, 21, 2, 1, &consumption) == 0);
+    assert(energyConsumption(1610, 1, 1, 1, 2, 1774, 21, 21, 2, 1, &consumption) == 0);
+    assert(energyConsumption(1610, 1, 1, 1, 2, 1774, 0, 21, 2, 1, &consumption) == 0);
+    assert(energyConsumption(1610, 1, 1, 1, 2, 1774, 11, 0, 2, 1, &consumption) == 0);
+    assert(energyConsumption(-3, 1, 1, 1, 2, 1774, 11, 0, 2, 1, &consumption) == 0);
+    assert(energyConsumption(1610, 12, 31, 23, 58, 1610, 12, 31, 23, 59, &consumption) == 1 && consumption == 201LL);
+
+    /* Nuly */
+    assert(energyConsumption(1600, 0, 1, 1, 1, 1601, 1, 1, 1, 1, &consumption) == 0);
+    assert(energyConsumption(1600, 0, 1, 1, 1, 1601, 1, 1, 1, 1, &consumption) == 0);
+    assert(energyConsumption(1600, 1, 0, 1, 1, 1601, 1, 1, 1, 1, &consumption) == 0);
+    assert(energyConsumption(1600, 1, 1, 0, 1, 1601, 1, 1, 1, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 1, 0, 1601, 1, 1, 1, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 1, 1, 1601, 0, 1, 1, 1, &consumption) == 0);
+    assert(energyConsumption(1600, 1, 1, 1, 1, 1601, 1, 0, 1, 1, &consumption) == 0);
+    assert(energyConsumption(1600, 1, 1, 1, 1, 1601, 1, 1, 0, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 1, 1, 1601, 1, 1, 1, 0, &consumption) == 1);
+
+    /* Max pole*/
+    assert(energyConsumption(1600, 12, 1, 1, 1, 1601, 1, 1, 1, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 31, 1, 1, 1601, 1, 1, 1, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 23, 1, 1601, 1, 1, 1, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 1, 59, 1601, 1, 1, 1, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 1, 1, 1601, 12, 1, 1, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 1, 1, 1601, 1, 31, 1, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 1, 1, 1601, 1, 1, 23, 1, &consumption) == 1);
+    assert(energyConsumption(1600, 1, 1, 1, 1, 1601, 1, 1, 1, 59, &consumption) == 1);
+
+    assert(energyConsumption(1600, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, INT_MAX, &consumption) == 0);
 
     // ProgTest
     assert(energyConsumption(2021, 10, 1, 13, 15,
