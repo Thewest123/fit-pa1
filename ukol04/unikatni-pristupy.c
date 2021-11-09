@@ -12,11 +12,6 @@ short hasSeenId[ID_MAX + 1];
 int accessLog[ACCESS_MAX];
 int lastLogIndex = 0;
 
-int intCmp(const int *a, const int *b)
-{
-    return (*b < *a) - (*a < *b);
-}
-
 void getQuery(int from, int to)
 {
     int count = to - from + 1;
