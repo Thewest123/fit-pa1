@@ -7,6 +7,8 @@
 
 int accesCounts[ID_MAX + 1];
 
+short hasSeenId[ID_MAX + 1];
+
 int accessLog[ACCESS_MAX];
 int lastLogIndex = 0;
 
@@ -19,20 +21,17 @@ void getQuery(int from, int to)
 {
     int count = to - from + 1;
 
-    int *accessLogPart = (int *)malloc(sizeof(accessLog[0]) * count);
-    memcpy(accessLogPart, &accessLog[from], count * sizeof(accessLog[0]));
-
-    qsort(accessLogPart, count, sizeof(accessLogPart[0]), (int (*)(const void *, const void *))intCmp);
-
     int distinctCount = 0;
-    for (int i = 0; i < count - 1; i++)
+    for (int i = from; i <= to; i++)
     {
-        if (accessLogPart[i] != accessLogPart[i + 1])
+        if (hasSeenId[accessLog[i]] == 0)
+        {
+            hasSeenId[accessLog[i]] = 1;
             distinctCount++;
+        }
     }
-    distinctCount++;
 
-    free(accessLogPart);
+    memset(hasSeenId, 0, sizeof(hasSeenId));
 
     printf("> %d / %d\n", distinctCount, count);
 }
