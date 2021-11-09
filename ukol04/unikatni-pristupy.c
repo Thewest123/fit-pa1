@@ -69,7 +69,7 @@ int main(int argc, char const *argv[])
         }
         else if (symbol == '+' && scanf(" %d", &num1) == 1)
         {
-            if (num1 < 0 || num1 > ID_MAX || lastLogIndex >= (ACCESS_MAX - 1))
+            if (num1 < 0 || num1 > ID_MAX || lastLogIndex >= ACCESS_MAX)
             {
                 printf("Nespravny vstup.\n");
                 return EXIT_FAILURE;
