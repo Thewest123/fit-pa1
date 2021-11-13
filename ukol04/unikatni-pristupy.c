@@ -6,11 +6,9 @@
 #define ID_MAX 99999
 
 int accesCounts[ID_MAX + 1];
+int accessLog[ACCESS_MAX];
 
 short hasSeenId[ID_MAX + 1];
-
-int accessLog[ACCESS_MAX];
-int lastLogIndex = 0;
 
 void getQuery(int from, int to)
 {
@@ -31,19 +29,21 @@ void getQuery(int from, int to)
     printf("> %d / %d\n", distinctCount, count);
 }
 
-void addAccess(int userId)
+void addAccess(int userId, int *lastLogIndex)
 {
     if (accesCounts[userId]++ == 0)
         printf("> prvni navsteva\n");
     else
         printf("> navsteva #%d\n", accesCounts[userId]);
 
-    accessLog[lastLogIndex++] = userId;
+    accessLog[(*lastLogIndex)++] = userId;
 }
 
 int main(int argc, char const *argv[])
 {
     printf("Pozadavky:\n");
+
+    int lastLogIndex = 0;
 
     char symbol = 0;
     int num1 = 0;
@@ -69,7 +69,7 @@ int main(int argc, char const *argv[])
                 return EXIT_FAILURE;
             }
 
-            addAccess(num1);
+            addAccess(num1, &lastLogIndex);
         }
         else if (symbol == '\n')
         {
