@@ -1,3 +1,11 @@
+/**
+ * @file nejprodavanejsi-zbozi.c
+ * @author Jan Cerny (cernyj87@fit.cvut.cz)
+ * @brief Program to count sales of sold items
+ * @version 1.0
+ * @date 2021-11-21
+ * 
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,25 +13,42 @@
 
 #define MAX_ITEM_NAME_LENGTH 100
 
+// Struct for the sold items, has name and sales count
 typedef struct
 {
     char name[MAX_ITEM_NAME_LENGTH];
     int count;
 } Item;
 
+// Array management inspired from our lector @wrzecond
+// https://gitlab.fit.cvut.cz/wrzecond/pa1-2021-cviceni/tree/master/cv08
+
+// Struct for the array of items, contains Items and keeps track of its size
 typedef struct
 {
     size_t size, maxSize;
     Item *item;
 } Items;
 
+// Alias for compare function
+typedef int (*Compare)(const void *, const void *);
+
+/**
+ * @brief Initialize the Items Array
+ * 
+ * @param itemsArray
+ */
 void initItems(Items *itemsArray)
 {
     memset(itemsArray, 0, sizeof(*itemsArray));
 }
 
-// Array management inspired from our lector
-// https://gitlab.fit.cvut.cz/wrzecond/pa1-2021-cviceni/tree/master/cv08
+/**
+ * @brief Append newItem to the Items Array, resize and allocate more memory if needed
+ * 
+ * @param itemsArray Pointer to the array
+ * @param newItem Item to be appended
+ */
 void addToItems(Items *itemsArray, Item newItem)
 {
     if (itemsArray->size >= itemsArray->maxSize)
@@ -35,12 +60,23 @@ void addToItems(Items *itemsArray, Item newItem)
     itemsArray->item[itemsArray->size++] = newItem;
 }
 
+/**
+ * @brief Free the allocated memory
+ * 
+ * @param itemsArray 
+ */
 void freeItems(Items *itemsArray)
 {
     free(itemsArray->item);
 }
 
-int addItem(Items *list, char itemName[MAX_ITEM_NAME_LENGTH])
+/**
+ * @brief Add new sold item to the list of sales if not present, otherwise increase the sales counter
+ * 
+ * @param list Array of sold items
+ * @param itemName Name of the new item
+ */
+void addItem(Items *list, char itemName[MAX_ITEM_NAME_LENGTH])
 {
     // Check if item already exists in list
     for (size_t i = 0; i < list->size; i++)
@@ -49,7 +85,7 @@ int addItem(Items *list, char itemName[MAX_ITEM_NAME_LENGTH])
         {
             // If exists, increment count
             list->item[i].count++;
-            return EXIT_SUCCESS;
+            return;
         }
     }
 
@@ -61,22 +97,35 @@ int addItem(Items *list, char itemName[MAX_ITEM_NAME_LENGTH])
     // Add to the list
     addToItems(list, newItem);
 
-    return EXIT_SUCCESS;
+    return;
 }
 
+/**
+ * @brief Print the sum of top sales, print each sale if isPrintingEnabled == 1
+ * 
+ * @param sortedList List of sold items, sorted by the sales count
+ * @param limit Limit the printing to only limit-amount of top sales
+ * @param isPrintingEnabled If set to true, prints info for each sale, otherwise only sum of sales
+ */
 void printTopSales(Items *sortedList, int limit, int isPrintingEnabled)
 {
+    // Sum of all sales within limit
     int salesCount = 0;
+
+    // Count how many items with same sales count are repeating
     int repeatCount = 0;
+
     int listSize = (int)sortedList->size;
+
     for (int i = 0; i < listSize; i++)
     {
         // Stop counting next items if over limit
         if (i >= limit)
             break;
 
-        // Count repeating items if they have the same sales count
         Item item = (sortedList->item)[i];
+
+        // Count repeating items
         for (int j = i; j < listSize; j++)
         {
             Item nextItem = (sortedList->item)[j];
@@ -103,13 +152,15 @@ void printTopSales(Items *sortedList, int limit, int isPrintingEnabled)
             for (int j = i; j < i + repeatCount; j++)
             {
                 Item item = (sortedList->item)[j];
+
                 if (isPrintingEnabled)
                     printf("%d.-%d. %s, %dx\n", i + 1, i + repeatCount, item.name, item.count);
+
                 salesCount += item.count;
             }
         }
 
-        // Skip repeated items
+        // Skip repeated items, (subtract 1 because for cycle adds it back (i++))
         i += repeatCount - 1;
         repeatCount = 0;
     }
@@ -117,6 +168,13 @@ void printTopSales(Items *sortedList, int limit, int isPrintingEnabled)
     printf("Nejprodavanejsi zbozi: prodano %d kusu\n", salesCount);
 }
 
+/**
+ * @brief Compare function for qsort, compares sales counts of items
+ * 
+ * @param a 
+ * @param b 
+ * @return int 
+ */
 int countCmp(const void *a, const void *b)
 {
     Item *itemA = (Item *)a;
@@ -130,16 +188,26 @@ int countCmp(const void *a, const void *b)
         return 0;
 }
 
+/**
+ * @brief Sorts the list by sales count, if it hasn't been sorted yet
+ * 
+ * @param list List to be sorted
+ * @param hasBeenSorted Bool to check for sorting
+ */
 void sortIfNotSorted(Items *list, int *hasBeenSorted)
 {
     if (*hasBeenSorted)
         return;
 
-    qsort(list->item, list->size, sizeof((list->item)[0]), (int (*)(const void *, const void *))countCmp);
+    qsort(list->item, list->size, sizeof((list->item)[0]), (Compare)countCmp);
 
     *hasBeenSorted = 1;
 }
 
+/**
+ * @brief Discard rest of the stdin input
+ * 
+ */
 void flushInput()
 {
     char c;
@@ -147,6 +215,12 @@ void flushInput()
         ;
 }
 
+/**
+ * @brief Read Watch count and check for valid input
+ * 
+ * @param[out] watchCount Pointer where to store the input
+ * @return int 1 if valid input, 0 if invalid
+ */
 int readWatchCount(int *watchCount)
 {
     // Read number of watched sales
