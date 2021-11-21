@@ -3,58 +3,118 @@
 #include <string.h>
 #include <ctype.h>
 
+#define MAX_ITEM_NAME_LENGTH 100
+
 typedef struct
 {
-    char name[100];
+    char name[MAX_ITEM_NAME_LENGTH];
     int count;
 } Item;
 
-int addItem(char itemName[100], Item **list, int *positions)
+typedef struct
+{
+    size_t size, maxSize;
+    Item *item;
+} Items;
+
+void initItems(Items *itemsArray)
+{
+    memset(itemsArray, 0, sizeof(*itemsArray));
+}
+
+// Array management inspired from our lector
+// https://gitlab.fit.cvut.cz/wrzecond/pa1-2021-cviceni/tree/master/cv08
+void addToItems(Items *itemsArray, Item newItem)
+{
+    if (itemsArray->size >= itemsArray->maxSize)
+    {
+        itemsArray->maxSize = 2 * itemsArray->maxSize + 5;
+        itemsArray->item = (Item *)realloc(itemsArray->item, itemsArray->maxSize * sizeof(itemsArray->item[0]));
+    }
+
+    itemsArray->item[itemsArray->size++] = newItem;
+}
+
+void freeItems(Items *itemsArray)
+{
+    free(itemsArray->item);
+}
+
+int addItem(Items *list, char itemName[MAX_ITEM_NAME_LENGTH])
 {
     // Check if item already exists in list
-    for (int i = 0; i < *positions; i++)
+    for (size_t i = 0; i < list->size; i++)
     {
-        if (strcmp((*list)[i].name, itemName) == 0)
+        if (strcmp(list->item[i].name, itemName) == 0)
         {
             // If exists, increment count
-            (*list)[i].count++;
+            list->item[i].count++;
             return EXIT_SUCCESS;
         }
     }
-
-    // If doesnt exist, enlarge the list by 1 Item
-    *list = (Item *)realloc(*list, (*positions + 1) * sizeof((*list)[0]));
 
     // Create a new Item
     Item newItem;
     strcpy(newItem.name, itemName);
     newItem.count = 1;
 
-    // Append to the list, *positions contains last index
-    (*list)[*positions] = newItem;
-
-    (*positions)++;
+    // Add to the list
+    addToItems(list, newItem);
 
     return EXIT_SUCCESS;
 }
 
-void printSellCount(Item **list, int positions)
+void printTopSales(Items *sortedList, int limit, int isPrintingEnabled)
 {
-    int sellCount = 0;
-    for (int i = 0; i < positions; i++)
+    int salesCount = 0;
+    int repeatCount = 0;
+    int listSize = (int)sortedList->size;
+    for (int i = 0; i < listSize; i++)
     {
-        sellCount += (*list)[i].count;
+        // Stop counting next items if over limit
+        if (i >= limit)
+            break;
+
+        // Count repeating items if they have the same sales count
+        Item item = (sortedList->item)[i];
+        for (int j = i; j < listSize; j++)
+        {
+            Item nextItem = (sortedList->item)[j];
+
+            // Increase the count if items have the same sales count
+            if (item.count == nextItem.count)
+                repeatCount++;
+            else
+                break;
+        }
+
+        // Print the output and count sales
+        if (repeatCount == 1)
+        {
+            // Print single item
+            if (isPrintingEnabled)
+                printf("%d. %s, %dx\n", i + 1, item.name, item.count);
+
+            salesCount += item.count;
+        }
+        else
+        {
+            // Print repeating items
+            for (int j = i; j < i + repeatCount; j++)
+            {
+                Item item = (sortedList->item)[j];
+                if (isPrintingEnabled)
+                    printf("%d.-%d. %s, %dx\n", i + 1, i + repeatCount, item.name, item.count);
+                salesCount += item.count;
+            }
+        }
+
+        // Skip repeated items
+        i += repeatCount - 1;
+        repeatCount = 0;
     }
 
-    printf("Nejprodavanejsi zbozi: prodano %d kusu\n", sellCount);
-}
-
-void printTopSells(Item **list, int positions)
-{
-    for (int i = 0; i < positions; i++)
-    {
-        printf("%d. %s, %dx\n", i + 1, (*list)[i].name, (*list)[i].count);
-    }
+    printf("Nejprodavanejsi zbozi: prodano %d kusu\n", salesCount);
 }
 
 int countCmp(const void *a, const void *b)
@@ -62,15 +122,21 @@ int countCmp(const void *a, const void *b)
     Item *itemA = (Item *)a;
     Item *itemB = (Item *)b;
 
-    return (itemB->count > itemA->count) - (itemA->count > itemB->count);
+    if (itemA->count > itemB->count)
+        return -1;
+    else if (itemA->count < itemB->count)
+        return 1;
+    else
+        return 0;
 }
 
-void sortIfNotSorted(Item **list, int positions, int *hasBeenSorted)
+void sortIfNotSorted(Items *list, int *hasBeenSorted)
 {
     if (*hasBeenSorted)
         return;
 
-    qsort(*list, positions, sizeof((*list)[0]), (int (*)(const void *, const void *))countCmp);
+    qsort(list->item, list->size, sizeof((list->item)[0]), (int (*)(const void *, const void *))countCmp);
+
     *hasBeenSorted = 1;
 }
 
@@ -81,25 +147,33 @@ void flushInput()
         ;
 }
 
-int main(void)
+int readWatchCount(int *watchCount)
 {
-    // Read number of watched sells
+    // Read number of watched sales
     printf("Pocet sledovanych:\n");
 
-    int watchedCount = 0;
+    if (scanf("%d", watchCount) != 1 || *watchCount < 1)
+        return 0;
 
-    if (scanf("%d", &watchedCount) != 1)
+    // Clear input buffer (trailing '\n')
+    flushInput();
+
+    return 1;
+}
+
+int main(void)
+{
+    int watchCount = 0;
+    if (!readWatchCount(&watchCount))
     {
         printf("Nespravny vstup.\n");
         return EXIT_FAILURE;
     }
 
-    // Clear input buffer (trailing '\n')
-    flushInput();
+    // Init variables
+    Items soldItems;
+    initItems(&soldItems);
 
-    // Declare needed variables
-    Item *soldItems = NULL;
-    int positions = 0;
     int hasBeenSorted = 0;
 
     // Read queries
@@ -108,32 +182,41 @@ int main(void)
     char action = 0;
     while (scanf("%c", &action) == 1)
     {
-        char itemName[100];
+        char itemName[MAX_ITEM_NAME_LENGTH + 1];
 
-        if (action == '+' && scanf("%99s", itemName) == 1)
+        // Add new item
+        if (action == '+' && scanf("%100s", itemName) == 1)
         {
-            itemName[0] = toupper(itemName[0]);
-            addItem(itemName, &soldItems, &positions);
+            // Check itemName max length
+            if (strlen(itemName) >= MAX_ITEM_NAME_LENGTH)
+                break;
+
+            // Add new item to the list
+            addItem(&soldItems, itemName);
             hasBeenSorted = 0;
         }
+        // Print sales count
         else if (action == '?')
         {
-            sortIfNotSorted(&soldItems, positions, &hasBeenSorted);
-            printSellCount(&soldItems, positions);
+            sortIfNotSorted(&soldItems, &hasBeenSorted);
+            printTopSales(&soldItems, watchCount, 0);
         }
+        // Print top sales and count
         else if (action == '#')
         {
-            sortIfNotSorted(&soldItems, positions, &hasBeenSorted);
-            printTopSells(&soldItems, positions);
+            sortIfNotSorted(&soldItems, &hasBeenSorted);
+            printTopSales(&soldItems, watchCount, 1);
         }
+        // Ignore the trailing '\n'
+        else if (action == '\n')
+            continue;
+        // Break for invalid input or EOF
         else
             break;
-
-        // Clear input buffer (trailing '\n')
-        flushInput();
     }
 
-    free(soldItems);
+    // Free the allocated memory
+    freeItems(&soldItems);
 
     // Return Error if not EOF
     if (!feof(stdin))
