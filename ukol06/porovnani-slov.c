@@ -6,6 +6,9 @@
 #include <assert.h>
 #endif /* __PROGTEST__ */
 
+// Alias for compare function
+typedef int (*Compare)(const void *, const void *);
+
 // Struct for a word
 typedef struct
 {
@@ -49,14 +52,31 @@ void freeWords(Words *wordsArray)
     free(wordsArray->data);
 }
 
+int addWord(Words *wordsArray, Word newWord)
+{
+    // Check if item already exists in list
+    for (size_t i = 0; i < wordsArray->size; i++)
+    {
+        if (strcmp(wordsArray->data[i].text, newWord.text) == 0)
+        {
+            // If exists, do nothing
+            return 1;
+        }
+    }
+
+    // Add to the list
+    addToWords(wordsArray, newWord);
+    return 0;
+}
+
 void splitWords(const char *inputString, Words *outputList)
 {
-    printf("IN: %s\n", inputString);
+    //printf("IN: %s\n", inputString);
 
     // Get max output length from input string
     int outputLength = strlen(inputString) + 1;
 
-    printf("SIZE: %d\n", outputLength);
+    //printf("SIZE: %d\n", outputLength);
 
     // Allocate sufficient memory space (output string can't be longer than input string)
     char *outputString = (char *)calloc(outputLength, sizeof(char));
@@ -92,9 +112,11 @@ void splitWords(const char *inputString, Words *outputList)
             Word newWord;
             newWord.text = strdup(outputString);
 
-            addToWords(outputList, newWord);
+            // Try to add a word, if it fails, free the memory
+            if (addWord(outputList, newWord))
+                free(newWord.text);
 
-            printf("OUT: %s\n", outputString);
+            //printf("OUT: %s\n", outputString);
 
             isInWord = 0;
         }
@@ -105,6 +127,14 @@ void splitWords(const char *inputString, Words *outputList)
 
     // Free allocted memory
     free(outputStringStart);
+}
+
+int wordCmp(const void *a, const void *b)
+{
+    Word *wordA = (Word *)a;
+    Word *wordB = (Word *)b;
+
+    return strcmp(wordA->text, wordB->text);
 }
 
 int sameWords(const char *a, const char *b)
@@ -119,15 +149,32 @@ int sameWords(const char *a, const char *b)
     splitWords(a, &wordsA);
     splitWords(b, &wordsB);
 
+    qsort(wordsA.data, wordsA.size, sizeof(wordsA.data[0]), (Compare)wordCmp);
+    qsort(wordsB.data, wordsB.size, sizeof(wordsB.data[0]), (Compare)wordCmp);
+
+    int result = 1;
+
+    int size = wordsA.size;
+    for (int i = 0; i < size; i++)
+    {
+        if (strcmp(wordsA.data[i].text, wordsB.data[i].text) != 0)
+        {
+            result = 0;
+            break;
+        }
+    }
+
     freeWords(&wordsA);
     freeWords(&wordsB);
 
-    return 1;
+    return result;
 }
 
 #ifndef __PROGTEST__
 int main(int argc, char *argv[])
 {
+    assert(sameWords("hello lorem ipsum hello ipsum hello hello", "abc abc abc abc def abc") == 0);
+    assert(sameWords("xyz students.", "HELLO xyz studEnts!") == 0);
     assert(sameWords("Hello students.", "HELLO studEnts!") == 1);
     assert(sameWords(" He said 'hello!'", "'Hello.' he   said.") == 1);
     assert(sameWords("He said he would do it.", "IT said: 'He would do it.'") == 1);
