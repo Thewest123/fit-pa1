@@ -135,40 +135,46 @@ int compareArrays(Words *a, Words *b)
     size_t sizeA = a->size;
     size_t sizeB = a->size;
 
+    // If uniqCount is different, we know arrays don't match, no need to check further
     if (a->uniqueCount != b->uniqueCount)
         return 0;
 
     size_t i = 0;
     size_t j = 0;
 
+    // Compare words from both arrays
+    // (Arrays are filled with NULL pointers on positions where were duplicates)
     while (1)
     {
+        // If we've searched through the whole array and they've matched so far, they're the same
         if (i >= sizeA || j >= sizeB)
             return 1;
 
+        // If we can access both (no null pointers), compare them
         if ((a->data[i].text) != NULL && (b->data[j].text) != NULL)
         {
             if (strcmp(a->data[i].text, b->data[j].text) != 0)
                 return 0;
 
+            // Advance for next words
             i++;
             j++;
         }
 
+        // If one of pointers is null, advance to next until it's valid
         if ((a->data[i].text) == NULL)
             i++;
 
         if ((b->data[j].text) == NULL)
             j++;
     }
-
-    //return 1;
 }
 
 void removeDuplicates(Words *array)
 {
     size_t size = array->size;
 
+    // Can't check for (i+1)-th item if there is only one
     if (size < 1)
         return;
 
@@ -178,8 +184,12 @@ void removeDuplicates(Words *array)
     {
         if (strcmp(array->data[i].text, array->data[i + 1].text) == 0)
         {
+            // If words are the same, remove the first one
             free(array->data[i].text);
+
+            // Set the pointer to null, so we don't free it again or try to access it
             array->data[i].text = NULL;
+
             continue;
         }
 
