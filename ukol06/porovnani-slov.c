@@ -21,7 +21,7 @@ typedef struct
 // Struct for the array of Word, contains words and keeps track of its size
 typedef struct
 {
-    size_t size, maxSize;
+    size_t size, maxSize, uniqueCount;
     Word *data;
 } Words;
 
@@ -44,36 +44,13 @@ void addToWords(Words *wordsArray, Word newWord)
 void freeWords(Words *wordsArray)
 {
     // Free every dynamically allocated string for text
-    for (size_t i = 0; i < wordsArray->size; i++)
+    size_t size = wordsArray->size;
+    for (size_t i = 0; i < size; i++)
     {
         free(wordsArray->data[i].text);
     }
 
     free(wordsArray->data);
-}
-
-/**
- * @brief Add Word to the list if doesn't already exist
- * 
- * @param wordsArray 
- * @param newWord 
- * @return int 1 if fail (already exists), 0 if success
- */
-int addWord(Words *wordsArray, Word newWord)
-{
-    // Check if item already exists in list
-    for (size_t i = 0; i < wordsArray->size; i++)
-    {
-        if (strcmp(wordsArray->data[i].text, newWord.text) == 0)
-        {
-            // If exists, do nothing
-            return 1;
-        }
-    }
-
-    // Add to the list
-    addToWords(wordsArray, newWord);
-    return 0;
 }
 
 /**
@@ -87,7 +64,7 @@ void splitWords(const char *inputString, Words *outputList)
     //printf("IN: %s\n", inputString);
 
     // Get max output length from input string
-    int outputLength = strlen(inputString) + 1;
+    size_t outputLength = strlen(inputString) + 1;
 
     //printf("SIZE: %d\n", outputLength);
 
@@ -100,7 +77,7 @@ void splitWords(const char *inputString, Words *outputList)
     // Flag to check if we're in a word or delimiter
     int isInWord = 0;
 
-    for (int i = 0; i < outputLength; i++)
+    for (size_t i = 0; i < outputLength; i++)
     {
 
         if (i != (outputLength - 1) && isalpha(*inputString))
@@ -125,11 +102,7 @@ void splitWords(const char *inputString, Words *outputList)
             Word newWord;
             newWord.text = strdup(outputString);
 
-            // Try to add a word, if it fails, free the memory
-            if (addWord(outputList, newWord))
-                free(newWord.text);
-
-            //printf("OUT: %s\n", outputString);
+            addToWords(outputList, newWord);
 
             isInWord = 0;
         }
@@ -159,22 +132,61 @@ int wordCmp(const void *a, const void *b)
  */
 int compareArrays(Words *a, Words *b)
 {
-    int sizeA = a->size;
-    int sizeB = b->size;
+    size_t sizeA = a->size;
+    size_t sizeB = a->size;
 
-    if (sizeA != sizeB)
+    if (a->uniqueCount != b->uniqueCount)
         return 0;
 
-    for (int i = 0; i < sizeA; i++)
-    {
-        if (i >= sizeB)
-            break;
+    size_t i = 0;
+    size_t j = 0;
 
-        if (strcmp(a->data[i].text, b->data[i].text) != 0)
-            return 0;
+    while (1)
+    {
+        if (i >= sizeA || j >= sizeB)
+            return 1;
+
+        if ((a->data[i].text) != NULL && (b->data[j].text) != NULL)
+        {
+            if (strcmp(a->data[i].text, b->data[j].text) != 0)
+                return 0;
+
+            i++;
+            j++;
+        }
+
+        if ((a->data[i].text) == NULL)
+            i++;
+
+        if ((b->data[j].text) == NULL)
+            j++;
     }
 
-    return 1;
+    //return 1;
+}
+
+void removeDuplicates(Words *array)
+{
+    size_t size = array->size;
+
+    if (size < 1)
+        return;
+
+    size_t uniq = 0;
+
+    for (size_t i = 0; i < size - 1; i++)
+    {
+        if (strcmp(array->data[i].text, array->data[i + 1].text) == 0)
+        {
+            free(array->data[i].text);
+            array->data[i].text = NULL;
+            continue;
+        }
+
+        uniq++;
+    }
+
+    array->uniqueCount = uniq;
 }
 
 int sameWords(const char *a, const char *b)
@@ -192,6 +204,9 @@ int sameWords(const char *a, const char *b)
     qsort(wordsA.data, wordsA.size, sizeof(wordsA.data[0]), (Compare)wordCmp);
     qsort(wordsB.data, wordsB.size, sizeof(wordsB.data[0]), (Compare)wordCmp);
 
+    removeDuplicates(&wordsA);
+    removeDuplicates(&wordsB);
+
     int result = compareArrays(&wordsA, &wordsB);
 
     freeWords(&wordsA);
@@ -204,6 +219,8 @@ int sameWords(const char *a, const char *b)
 int main(int argc, char *argv[])
 {
     assert(sameWords("hello", "lorem ipsum dolor sit amet hello world") == 0);
+    assert(sameWords(" ", "lorem ipsum dolor sit amet hello world") == 0);
+    assert(sameWords(" ", "               ") == 1);
     assert(sameWords("lorem ipsum dolor sit amet hello world", "hello") == 0);
     assert(sameWords("hello", "hello hello hello hello hello,hello.") == 1);
     assert(sameWords("hello hello hello hello hello,hello.", "hello") == 1);
@@ -222,6 +239,7 @@ int main(int argc, char *argv[])
             "whtcDClvDFyMWNwxUcLxYIjnDFlKkVoVqNwOsMPONzXzQygnQkOxyBLQRRIVDqRdOprIIaUxPsLTPOdYVdRSvcDlwRWgBVIqsWJdAqgUYdNqUTrkSOmphZlANTjAdCjQagTJusUKKliaMwDGvDEesacRQnBaruntYerUqJqNMlAtePsStkLVVtNyIudclNAWOIuYEBSUTMVFqAkpKXkPolWNRKGUoFDhGQdLFAZvSiEvasaNgBExdhIxdjLCnIohfDPIJHXQOMddzWibzqnmiTkSQFhiCQPAbsFKdimbJCofISOBCXwLEosOrBAsnaqSdVRqdReGhNwuVAqZjehlvqNqKlabfyaAwSAIfpLohuIAnuQKFiNFPakbpuNABQsUOsDmeChaZwBbdyOAiXukmMeQgrzwoWGsmRvpooJPAhYvbzXoJRyOcOorwrIbNaMPyHwMLzECyqMxKeCvWcBXxxDHVngHurriVwnOOtsPvFAYaFBVLdDUlhLwSNysjuSyFEkFGHTWljrLHrWmFbJQhTwoXzFvQTLymFBVNONBdDiOYiiMTOQmnWxHTqFceMkmchynVZENwTWYaSmONmworhImsmWUdNYVJTypXcAEZJwFMkgaJoApLBySGhvOMsDZieQUKXezjzVHAdDbSdLmcttFRcvSdmceJDltAXOBXihWvVeZACrlUXJWpvOauVmlBwCrqheuNzAaDWlqkiparwlyeHzwjnjGUGwPUideuBoISeHDoIpgsKvdTmCnbPmtFPumoZxsfoQcQGZGlFAatcZisTNtJTGzjjhBhUMymkMgpUpcgxOEzdofWKUwVyJgMszOSmylWlRMLGpneQuCZLLMzaoGhcSuesrZaIdCzFKUynPajGzVqVxHfqowcBOdflCvNZnpdYdigZQNAkrnAuhYfapdXnLSKtfheYuurxFqYIYxDXPsMeRdlvuGOTgBTbiZTfVzodbfdGldHUhTKDMrcOUQzHWWNsHDpZARxCRvrMBPbyPucAkMwgBVzSFpbYJgegOzVILvXHSjlvYaHXwMYMNbivxaFRYOHqpFumRJsldNUwiTBNhHOBNglylFhXAFIhYrHlWxVqYtRLjLgGXhKTlThHygAeBWaMkdUMBQJMmhDMaatHzkvrEmyTKTdlOuoebumApQHoPAXchIQBuRbjTpkwTFMqBAfiVbWaLFJvzdxfEKiJsvXlDaqQyPhPpNHiiaxLrAANqZDxhCMLMzhEHkctIMSKGQbBAwFDUAAJcEtezWAYkwHNMrRgRqvlCDohoEUqXtiaASpbCqhFumxUVDaJYSfcbdYFvlaQufCdomnJNLUGiDnxfYjZXGRGGneaPqKKwvHWAUJgpIvOUWlSUchYhvEbYeMbhUJzEutIeHxPRlotOPuMCnoojHRLAbnxKtGOvPadOESEiWdpNlNVwPwPeayVtKpHqSWneAfrPIKkzRGczEJSFxqLzxiLjwrlyxhuNkUXZucQYOuWQeGpxRzEFrZZglmhevyzldmlLEadRPsJXceVTovUQfFHxvYukaQjVYHHVJUUdaRFeeIvpqhrgBJHEStESqVgMmkySDqgyiSZRwoxgsWJYNndPgipdIQqeGetEUvAfgjpdHlOwZBESvEecqoGvdqusBJLcSgMVsGcAqXVYiCCSpxjvDjjrkijUvaiDijeAIgrgobGczoSLjfXjwPckDpLkvCzkHNWYTlBPRuBqrBuMklmiEjxtUkfkGWYuABqrplOLDvQNOGzriiAUYwajqQYXXogipEfmuPyazdNOKQRUqsVzczESntpmjNuFKgbXJeLGwgQUbYxJFVSvpDhlXbvoAUceLGgybxvxhZHMizESlhtZEgBrWCTIvtrwICugNQFrkKQPtjKGBSFWpzhvWiAgiHesxVIVApMYDCJSdnylwlrSlLtsYsGbZtiXfHTXZUcQpXvBcIPgdJVsCNJSFBCtqZiHAcXQTlqpEtFegkANSfCQpjqZyquUCIuEyjYyjQYCjhXPsqEwDziJQBBcBayTPZClFlLkTQYjSNsKfhWjRuDNPAILJAHqXnMOtvpBUTQoZpZEjEKRTZshjWMJqwkyZMZJqNiQWYROOfvzMlAggHIvpSJDqzurFzGmuhiXxnQaMvLILZFEAdbiYhyUspTZaGbeUkILAvrItuezEevVEuUfFJfigiSbsfDCjuRusfIkClNXpwHvhndcfbEaBpTgAjMcswPSbxHmNHFqBxZfNgCkJxJkRGydLKNNpifHiWxmUspGXqsqwpDvdOypOLcccfcVHMDJnCDIxaWSpCKCjHQlEADmjmuPwsQehpGbvuKnobaJiUixJuJuAMXBbZPnlwyVzeFfjCqXvvzagnvjLakCnxtKmxkXmMBHRLCftqhOYrfjkMjeiIqSGyyPTsVhJsrCAgQTWhVatCGKyfbttCHqWsLnklLapwvZKOuAgqoZtmnReKQnjnEjqkbXzgyBUyZYhibcIXOFpRMsWsjXhmkbGNMsUiZhmODsFtqOnMWKuiOVkoEblfAvJAbAwsrpmKXmTudHsGAMAkullDuVqPAZEMNZlEIOtmEXSbQeGmBAmFmgpSBMGumimYczNuoCGxsbcQqnMLBBupllEgnrKKHoonZEjOgCqLCncuFXBXzBCiDgXnHpdKJnMTFcNagYugOudgMQOiXlybEbgdrKhNLhuuplZcMqeirreaUIDdBhreKVXuKzRNDaRCZLTwpCWxwEDVnqDztvDEgNjPIsZlhsNdZaIgTYkKPCLYYFilkcAnvfHcgZnnwXpktLhaONNUCFrKzpnrWfLXYQlbiNWfjGcSQTjEhWBfqOlAlSxCwHvXutqjTItZrPwrtjwJoVjcRIzEluaNsxdNfrgNVNXoDoCnFalcdgiuufPgaAmNIdIOnAjKEidTczOtJCxuiBDorYcgQpHZhbFtYafLRVzfoFMmhnBOLtpPGHrpapMiLXbtfDitGmnZCgGFMdBHzjVnxXCJSOIMmoZyVSOEodaFTRSFlVFroRHvYffjztPwlaqASaJarxCqsRNKCCATbpfICKRSzJHfugaVhFXoeVZmXMKrTpJbnRJAvrzUOSQhwavdRRbwemoiASVrXsjphTmzXAEBpqhpgNrVwapiKqtJxixTHjJIxgBzGDqbezHuieMoHQHfTopZMohyUIlmKKCkDAjhvyEyEZqlNVNDGChfdsZXVDinGvcHrMnDFWJTXqVMscqpeFgkXjjMYwMCwyIvzkyApDdydwIfGAtyFOXjNxTjjLeAykSoewZAGzTczKjIfMrTjGPUKqsRJPpqgxQjaJbndKiHOcpxwcoNvAdQWBCpYYigbQxCAByRRyeOWTsQLAYNzqyGEjCgYxbtrBIEabKiKKZEFchRdxzvyNmjiBYTsVIxhqadGznEZFgsFRbdskoQIpzfStypxsjGKtsYdAVPOKgmCwVGEgbGJtSSvEWbiJuwZgzxzitDoLaEhvURwCizVBFDjHITJIIuvFykOXmuWIxiIdmtfnJeoekZGgChHKNZAYQxlgBpphkLhZgSPvIKbeGAlwECGICLEwlSojqnAtyihikrSPIEeBuuhNpKuhWhDzfdtOcbjQlVXDrKcLKpLLtHCJXMgLpnQDKOjtumInyggkKamkiPkbCiPeZTzVwxCoyCwRQlTTvpkhTtZLpOOEtJxgOAVyCxTvVwduimoOfEMqCrDPcfOelmJwzsCSMUzNugScEjCjDPwFwCxzKFEwFtnsTVyoqhrYscssuaNhjCGNnWOvkJSndUQNpFykvkHJyCynbxNNoGWqYOZsuZaMQlFJyOXINIiHNNLOXhryGCAdnpkPXKPgcAlMgNHIkPhuIWaIUJlkVmiIhIookRMMtyxPAwgRkxYkhbjrgGGBhNCBGfYYzdcRnBcaDlUttgZLJOsYGbieGhreICzXePSqOhmxmszvUApddhXHpiFrgskojFppGpJIRNJiMdnssMdViXamLuRSLrwALayOcsyGl") == 1);
     assert(sameWords("one two lorem ipsum three.", "one two five") == 0);
     assert(sameWords("one two three", "one two five") == 0);
+
     return 0;
 }
 #endif /* __PROGTEST__ */
