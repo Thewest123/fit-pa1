@@ -52,6 +52,13 @@ void freeWords(Words *wordsArray)
     free(wordsArray->data);
 }
 
+/**
+ * @brief Add Word to the list if doesn't already exist
+ * 
+ * @param wordsArray 
+ * @param newWord 
+ * @return int 1 if fail (already exists), 0 if success
+ */
 int addWord(Words *wordsArray, Word newWord)
 {
     // Check if item already exists in list
@@ -69,6 +76,12 @@ int addWord(Words *wordsArray, Word newWord)
     return 0;
 }
 
+/**
+ * @brief Split string by words an add them to Words array
+ * 
+ * @param inputString 
+ * @param outputList 
+ */
 void splitWords(const char *inputString, Words *outputList)
 {
     //printf("IN: %s\n", inputString);
@@ -137,6 +150,33 @@ int wordCmp(const void *a, const void *b)
     return strcmp(wordA->text, wordB->text);
 }
 
+/**
+ * @brief Compare sorted arrays that they are the same
+ * 
+ * @param a 
+ * @param b 
+ * @return int 
+ */
+int compareArrays(Words *a, Words *b)
+{
+    int sizeA = a->size;
+    int sizeB = b->size;
+
+    if (sizeA != sizeB)
+        return 0;
+
+    for (int i = 0; i < sizeA; i++)
+    {
+        if (i >= sizeB)
+            break;
+
+        if (strcmp(a->data[i].text, b->data[i].text) != 0)
+            return 0;
+    }
+
+    return 1;
+}
+
 int sameWords(const char *a, const char *b)
 {
 
@@ -152,17 +192,7 @@ int sameWords(const char *a, const char *b)
     qsort(wordsA.data, wordsA.size, sizeof(wordsA.data[0]), (Compare)wordCmp);
     qsort(wordsB.data, wordsB.size, sizeof(wordsB.data[0]), (Compare)wordCmp);
 
-    int result = 1;
-
-    int size = wordsA.size;
-    for (int i = 0; i < size; i++)
-    {
-        if (strcmp(wordsA.data[i].text, wordsB.data[i].text) != 0)
-        {
-            result = 0;
-            break;
-        }
-    }
+    int result = compareArrays(&wordsA, &wordsB);
 
     freeWords(&wordsA);
     freeWords(&wordsB);
@@ -173,6 +203,10 @@ int sameWords(const char *a, const char *b)
 #ifndef __PROGTEST__
 int main(int argc, char *argv[])
 {
+    assert(sameWords("hello", "lorem ipsum dolor sit amet hello world") == 0);
+    assert(sameWords("lorem ipsum dolor sit amet hello world", "hello") == 0);
+    assert(sameWords("hello", "hello hello hello hello hello,hello.") == 1);
+    assert(sameWords("hello hello hello hello hello,hello.", "hello") == 1);
     assert(sameWords("hello lorem ipsum hello ipsum hello hello", "abc abc abc abc def abc") == 0);
     assert(sameWords("xyz students.", "HELLO xyz studEnts!") == 0);
     assert(sameWords("Hello students.", "HELLO studEnts!") == 1);
