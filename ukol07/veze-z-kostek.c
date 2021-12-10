@@ -6,6 +6,48 @@
 typedef int (*Compare)(const void *, const void *);
 
 /**
+ * @brief Print combinations and count them
+ * 
+ * @param cubesSizes Array containing the available sizes
+ * @param cubesCount Count of cubesSizes array
+ * @param tower Array containing the current tower
+ * @param towerIndex Count of cubes in current tower
+ * @param combinationSize Size of the current combination
+ * @param nextPosition Next starting position for moving cubesSizes to tower
+ * @param total Total sum of combinations from previous run
+ * @return int total sum of combinations for current run
+ */
+int combinate(int *cubesSizes, int cubesCount, int *tower, int towerIndex, int combinationSize, int nextPosition, int total)
+{
+    // If current tower matches the combination size, print 1 combination line
+    if (combinationSize == towerIndex)
+    {
+        // Print all except last element
+        for (int i = 0; i < combinationSize - 1; i++)
+        {
+            printf("%d, ", tower[i]);
+        }
+
+        // Print the last element
+        printf("%d", tower[combinationSize - 1]);
+        printf("\n");
+
+        // Increment the total of combinations
+        total++;
+
+        return total;
+    }
+
+    for (int i = nextPosition; i < cubesCount; i++)
+    {
+        tower[towerIndex] = cubesSizes[i];
+        total += combinate(cubesSizes, cubesCount, tower, towerIndex + 1, combinationSize, i + 1, 0);
+    }
+
+    return total;
+}
+
+/**
  * @brief qsort compare function
  * 
  * @param a int a
@@ -59,9 +101,21 @@ int main(void)
     // Sort sizes from largest to smallest
     qsort(cubesSizes, cubesCount, sizeof(cubesSizes[0]), (Compare)sizeComp);
 
-    // Permutate and count total
+    // Combinate and count total of combinations
     int total = 0;
-    // TODO: recursion
+
+    for (int i = cubesCount; i > 0; i--)
+    {
+        // Allocate temp tower
+        int *tower = (int *)malloc(sizeof(tower[0] * i));
+
+        // Count and print combinations
+        total += combinate(cubesSizes, cubesCount, tower, 0, i, 0, 0);
+
+        // Free allocated memory
+        free(tower);
+    }
+
     printf("Celkem: %d\n", total);
 
     // Free allocated memory
