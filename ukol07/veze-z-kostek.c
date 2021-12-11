@@ -54,7 +54,7 @@ int combinate(int *cubesSizes, int cubesCount, int *tower, int towerIndex, int c
 }
 
 /**
- * @brief qsort compare function
+ * @brief qsort compare function, sort from largest to smallest
  * 
  * @param a int a
  * @param b int b
@@ -99,7 +99,13 @@ int main(void)
     {
         int size = 0;
         if (scanf("%d", &size) != 1 || size < 1)
+        {
+            // Free allocated memory
+            free(cubesSizes);
+
+            // Print error and exit
             return exitWithError();
+        }
 
         cubesSizes[i] = size;
     }
