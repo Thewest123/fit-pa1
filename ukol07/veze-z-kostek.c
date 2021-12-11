@@ -42,6 +42,10 @@ int combinate(int *cubesSizes, int cubesCount, int *tower, int towerIndex, int c
     {
         tower[towerIndex] = cubesSizes[i];
         total += combinate(cubesSizes, cubesCount, tower, towerIndex + 1, combinationSize, i + 1, 0);
+
+        // If cube was already used, skip it, check if i+1 is in bounds
+        if ((i + 1 < cubesCount) && cubesSizes[i] == cubesSizes[i + 1])
+            i++;
     }
 
     return total;
