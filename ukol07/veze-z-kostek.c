@@ -107,7 +107,7 @@ int main(void)
     for (int i = cubesCount; i > 0; i--)
     {
         // Allocate temp tower
-        int *tower = (int *)malloc(sizeof(tower[0] * i));
+        int *tower = (int *)malloc(sizeof(tower[0]) * i);
 
         // Count and print combinations
         total += combinate(cubesSizes, cubesCount, tower, 0, i, 0, 0);
